@@ -6,6 +6,8 @@ const network = require('./network');
 const spc = require('./spc');
 
 const { app, dialog } = require('electron');
+const parse = require('url-parse');
+const querystring = require('query-string');
 
 const { appMenu } = require('./menu');
 const { registerApp, registerShortcut } = require('./app');
@@ -81,6 +83,9 @@ process
     });
   });
 
+// 注册自定义协议,用于url唤起
+app.setAsDefaultProtocolClient('iceworks');
+
 app.on('ready', async () => {
   if (isDev) {
     await installExtensions();
@@ -122,3 +127,15 @@ app.on('ready', async () => {
     settings.set('isAlibaba', isAlibaba);
   }
 });
+
+app.on('will-finish-launching', () => {
+  // 监听，处理从url唤起iceworks的参数
+  app.on('open-url', function (event, url) {
+    // url = iceworks://?to=scaffold
+    url = parse(url);
+    const query = querystring.parse(url.query);
+    if (Object.keys(query)) {
+      settings.set('urlEvokeQuery', query);
+    }
+  })
+})
